@@ -1,0 +1,42 @@
++---------------------+
+| Vault specification |
++---------------------+
+
++----------------+
+| Server storage |
++----------------+
+
+The Vault server will store files with the directory format:
+
+<root directory>
+	users
+		<user-id>
+			{user public key}
+			data
+				{user data}
+			settings
+				{user settings}
+	service
+		settings
+			{server settings}
+
++-----------------------+
+| Client Authentication |
++-----------------------+
+
+While as the Vault architecture does not need as much security as all files stored on the server are encrypted, we will use still use some degree of security in user authentication.
+
+On the servers the user's credentials are stored in a text-based format (passwords are NOT stored in plaintext).
+These credentials are ONLY used to query which files belong to which user. Even if the user guesses another user's authentication password they will still not be able to read the other users's file contents.
+
++-----------------+
+| File encryption |
++-----------------+
+
+The Vault encryption system uses multiple layers of AES-256 for file security.
+
+Before a file is uploaded, it is first encrypted with the users's global secret key. (AES, symmetric encryption)
+Next, if the user specifies, the file is encrypted again with another file-specific password.
+Finally, the file is encrypted with the server's public RSA key, signed with the user's private key, and sent to the server.
+
+The server receives the encrypted information and stores it on the local drive.
