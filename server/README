@@ -1,0 +1,6 @@
++---------------------+
+| Vault server README |
++---------------------+
+
+The Vault server is an alternative to storage in an Azure blob, and is much faster and more secure.
+The Vault communication protocol between a Vault client and Vault native server is a wrapper around FTP, with heavier authentication using OpenSSL.

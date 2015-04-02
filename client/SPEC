@@ -33,10 +33,10 @@ These credentials are ONLY used to query which files belong to which user. Even 
 | File encryption |
 +-----------------+
 
-The Vault encryption system uses multiple layers of AES-256 for file security.
+The Vault encryption system uses multiple layers of AES-256 encryption for file security.
 
 Before a file is uploaded, it is first encrypted with the users's global secret key. (AES, symmetric encryption)
 Next, if the user specifies, the file is encrypted again with another file-specific password.
 Finally, the file is encrypted with the server's public RSA key, signed with the user's private key, and sent to the server.
 
-The server receives the encrypted information and stores it on the local drive.
+The server receives the encrypted information, signs the data with the server's private key and stores it on the local drive.
