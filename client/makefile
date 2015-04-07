@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -std=c99 -Wall
-LDFLAGS =
+LDFLAGS = -lstdc++
 
 OUTPUT = vault
 VPATH = src
