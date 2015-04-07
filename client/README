@@ -42,4 +42,19 @@
 |	$ vault --enc <password> --rget <remotefile>                                                                     |
 |                                                                                                                        |
 |	This is the same as --rget and --get, except a second layer of encryption is decrypted using the password.       |
+|                                                                                                                        |
+| To locally encrypt a file:                                                                                             |
+|	$ vault --globalenc <localfile>                                                                                  |
+|                                                                                                                        |
+|	This will locally encrypt the file with the user's global key.                                                   |
+|                                                                                                                        |
+| To locally decrypt a file:                                                                                             |
+| 	$ vault --globaldec <localfile>                                                                                  |
+|                                                                                                                        |
+|	This will locally decrypt the file with the user's global key.                                                   |
+|                                                                                                                        |
+| To list remote files:                                                                                                  |
+|	$ vault --list                                                                                                   |
+|                                                                                                                        |
+|	This is similar to `ls` on UNIX systems.                                                                         |
 +------------------------------------------------------------------------------------------------------------------------+

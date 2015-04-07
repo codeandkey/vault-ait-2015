@@ -4,9 +4,24 @@
 #include <string.h>
 
 #define VAULT_MODE_UNDEF -1
+
+/* VAULT_MODE_CONFIG : generate the global user key */
 #define VAULT_MODE_CONFIG 0
+
+/* VAULT_MODE_STORE : encrypt a file with the global user key and upload it */
 #define VAULT_MODE_STORE 1
+
+/* VAULT_MODE_GET : retrieve a file and decrypt it with the global user key */
 #define VAULT_MODE_GET 2
+
+/* VAULT_MODE_DEC : decrypt a file with the global user key */
+#define VAULT_MODE_DEC 3
+
+/* VAULT_MODE_ENC : encrypt a file with the global user key */
+#define VAULT_MODE_ENC 4
+
+/* VAULT_MODE_LS : list remote files */
+#define VAULT_MODE_LS 5
 
 void check_format(int argc, char** argv, int key, int expected_args);
 
@@ -26,6 +41,10 @@ int main(int argc, char** argv) {
 
 			enc_mode = 1;
 			enc_key = argv[i + 1];
+		}
+
+		if (!strcmp(argv[i], "--config")) {
+			exec_mode = VAULT_MODE_CONFIG;
 		}
 
 		if (!strcmp(argv[i], "--store")) {
@@ -57,6 +76,27 @@ int main(int argc, char** argv) {
 			remote_file = argv[i + 1];
 			local_file = argv[i + 2];
 		}
+
+		if (!strcmp(argv[i], "--globalenc")) {
+			check_format(argc, argv, i, 1);
+			exec_mode = VAULT_MODE_ENC;
+			local_file = remote_file = argv[i + 1];
+		}
+		
+		if (!strcmp(argv[i], "--globaldec")) {
+			check_format(argc, argv, i, 1);
+			exec_mode = VAULT_MODE_DEC;
+			local_file = remote_file = argv[i + 1];
+		}
+
+		if (!strcmp(argv[i], "--list")) {
+			exec_mode = VAULT_MODE_LS;
+		}
+	}
+
+	if (exec_mode == VAULT_MODE_UNDEF) {
+		vault_print(VAULT_CRT, "vault: no mode specified");
+		return 1;
 	}
 
 	vault_print(VAULT_DBG, "key = [%s], localfile = [%s], remotefile = [%s]", enc_key, local_file, remote_file);
