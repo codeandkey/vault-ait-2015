@@ -1,6 +1,7 @@
 #include "vault.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #define VAULT_MODE_UNDEF -1
@@ -24,6 +25,8 @@
 #define VAULT_MODE_LS 5
 
 void check_format(int argc, char** argv, int key, int expected_args);
+int encrypt_file(char* ifile, char* ofile, char* key, int mode_dec);
+int encrypt_file_inplace(char* file, char* key, int mode_dec);
 
 int main(int argc, char** argv) {
 	vault_print(VAULT_DBG, "Starting Vault..");
@@ -114,6 +117,40 @@ int main(int argc, char** argv) {
 
 	char globalkey[1024] = {0};
 
+	FILE* vault_conf = fopen("vault.conf", "r");
+
+	if (!vault_conf) {
+		printf("vault: failed to open configuration file. run with --config to generate it.\n");
+		return 1;
+	}
+
+	fgets(globalkey, 1024, vault_conf);
+	globalkey[strlen(globalkey) - 1] = 0;
+
+	fclose(vault_conf);
+
+	switch (exec_mode) {
+	case VAULT_MODE_ENC:
+		/* We are simply encrypting a file with the global key. */
+		{
+			if (!encrypt_file_inplace(local_file, globalkey, 0)) {
+				vault_print(VAULT_DBG, "vault: encryption failed");
+			} else {
+				vault_print(VAULT_DBG, "vault: encryption succeeded");
+			}
+		}
+		break;
+	case VAULT_MODE_DEC:
+		{
+			if (!encrypt_file_inplace(local_file, globalkey, 1)) {
+				vault_print(VAULT_DBG, "vault: decryption failed");
+			} else {
+				vault_print(VAULT_DBG, "vault: decryption succeeded");
+			}
+		}
+		break;
+	}
+
 	return 0;
 }
 
@@ -124,4 +161,60 @@ void check_format(int argc, char** argv, int i, int expected_args) {
 			return;
 		}
 	}
+}
+
+int encrypt_file(char* ifilename, char* ofilename, char* key, int mode_dec) {
+	FILE* ifile = fopen(ifilename, "rb"), *ofile = fopen(ofilename, "wb");
+
+	if (!ifile || !ofile) {
+		vault_print(VAULT_CRT, "encrypt_file: failed to open files\n");
+		return 0;
+	}
+
+	fseek(ifile, 0, SEEK_END);
+	int ifile_size = ftell(ifile);
+	fseek(ifile, 0, SEEK_SET);
+
+	printf("encrypt_file: read file size as %d\n", ifile_size);
+
+	char* ifile_buffer = malloc(ifile_size + 1);
+
+	ifile_buffer[ifile_size] = 0;
+
+	fread(ifile_buffer, 1, ifile_size, ifile);
+
+	if (ifile_buffer[ifile_size - 1] == '\n') {
+		ifile_buffer[ifile_size-- - 1] = 0;
+	}
+
+	fclose(ifile);
+
+	if (!mode_dec) {
+		vault_encrypt_aes256(ifile_buffer, key);
+	} else {
+		vault_decrypt_aes256(ifile_buffer, key);
+	}
+
+	fwrite(ifile_buffer, 1, ifile_size, ofile);
+	fclose(ofile);
+
+	return 1;
+}
+
+int encrypt_file_inplace(char* filename, char* key, int mode_dec) {
+	char* newstr = malloc(strlen(filename) + 2);
+	newstr[strlen(filename) + 1] = 0;
+	newstr[0] = '.';
+	strcpy(newstr + 1, filename);
+
+	if (!encrypt_file(filename, newstr, key, mode_dec)) {
+		return 0;
+	}
+
+	char cmd[1024] = {0};
+	snprintf(cmd, 1024, "mv %s %s", newstr, filename);
+
+	system(cmd);
+
+	return 1;
 }

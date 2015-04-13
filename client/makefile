@@ -1,11 +1,11 @@
 CC = gcc
 CFLAGS = -std=c99 -Wall -fdiagnostics-color=always
-LDFLAGS = -lssl -lcrypto
+LDFLAGS = -lssl -lcrypto -lgcrypt
 
 OUTPUT = vault
 VPATH = src
 
-SOURCES = vault.c vault_cli.c vault_conf.c
+SOURCES = vault.c vault_cli.c vault_conf.c vault_aes.c
 
 OBJECTS = $(SOURCES:.c=.o)
 
