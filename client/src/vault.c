@@ -113,14 +113,14 @@ int main(int argc, char** argv) {
 		return 0;
 	}
 
-	vault_print(VAULT_DBG, "vault: reading configuration..\n");
+	vault_print(VAULT_DBG, "vault: reading global key..\n");
 
 	char globalkey[1024] = {0};
 
-	FILE* vault_conf = fopen("vault.conf", "r");
+	FILE* vault_conf = fopen("vault.key", "r");
 
 	if (!vault_conf) {
-		printf("vault: failed to open configuration file. run with --config to generate it.\n");
+		printf("vault: failed to open key file. run with --config to generate it.\n");
 		return 1;
 	}
 

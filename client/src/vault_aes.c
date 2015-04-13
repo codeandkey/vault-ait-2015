@@ -11,11 +11,11 @@ static int initialized = 0;
 static void check_init(void);
 static int vault_aes256(char* buffer, char* key, char* iv, int enc_mode);
 
-void vault_encrypt_aes256(char* buffer, char* key) {
+int vault_encrypt_aes256(char* buffer, char* key) {
 	return vault_aes256(buffer, key, "1234567890123456", 1);
 }
 
-void vault_decrypt_aes256(char* buffer, char* key) {
+int vault_decrypt_aes256(char* buffer, char* key) {
 	return vault_aes256(buffer, key, "1234567890123456", 0);
 }
 
@@ -38,15 +38,15 @@ int vault_aes256(char* buffer, char* key, char* ini_vector, int enc_mode) {
 
 	printf("vault_aes256: given text: [%s]\n", buffer);
 
-	printf("vault_aes256: AES256 key length = %d, block length = %d, given key length = %d, given IV length = %d, given text length = %d\n", key_length, block_length, strlen(key), ini_length, text_length);
+	printf("vault_aes256: AES256 key length = %zu, block length = %zu, given key length = %zu, given IV length = %zu, given text length = %zu\n", key_length, block_length, strlen(key), ini_length, text_length);
 
 	if (ini_length != block_length) {
-		printf("vault_aes256: ini length [%d] must be equal to the block length [%d]\n", ini_length, block_length);
+		printf("vault_aes256: ini length [%zu] must be equal to the block length [%zu]\n", ini_length, block_length);
 		return 0;
 	}
 
 	if (strlen(key) != key_length) {
-		printf("vault_aes256: key length [%d] must be equal to the algorithm key length [%d]\n", strlen(key), key_length);
+		printf("vault_aes256: key length [%zu] must be equal to the algorithm key length [%zu]\n", strlen(key), key_length);
 		return 0;
 	}
 
@@ -59,7 +59,7 @@ int vault_aes256(char* buffer, char* key, char* ini_vector, int enc_mode) {
 	gcry_error_t err;
 	gcry_cipher_hd_t hd;
 
-	err = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CBC, 0);
+	err = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CTR, 0);
 
 	if (err) {
 		printf("vault_aes256: failed to open cipher [%s]\n", gcry_strerror(err));

@@ -6,6 +6,8 @@
 
 #include <openssl/sha.h>
 
+void sha256(char* str, char* buf);
+
 int vault_conf_prompt(void) {
 	const char* salt = "@#$vault";
 
@@ -45,7 +47,7 @@ int vault_conf_prompt(void) {
 	printf("> All credentials received.\n");
 	printf("> Generating user container..\n");
 
-	unsigned char container[SHA_DIGEST_LENGTH] = {0};
+	unsigned char container[SHA256_DIGEST_LENGTH + 1] = {0};
 
 	unsigned char* username_input = malloc(sizeof(unsigned char) * strlen(salt) * 2 + strlen((char*) username));
 
@@ -55,14 +57,15 @@ int vault_conf_prompt(void) {
 
 	printf("> [username_input = %s]\n", username_input);
 
-	SHA1(username_input, strlen((char*) username_input), container);
+	sha256((char*) username_input, (char*) container);
+	container[SHA256_DIGEST_LENGTH] = 0;
 
 	printf("> .. Done.\n");
 	printf("> Generating global key..\n");
 
-	unsigned char globalkey_final[SHA_DIGEST_LENGTH] = {0};
-
-	SHA1(globalkey, strlen((char*) globalkey), globalkey_final);
+	unsigned char globalkey_final[SHA256_DIGEST_LENGTH + 1] = {0};
+	sha256((char*) globalkey, (char*) globalkey_final);
+	globalkey_final[SHA256_DIGEST_LENGTH] = 0;
 
 	printf("> .. Done.\n");
 	printf("> Writing vaultio.conf..\n");
@@ -88,25 +91,38 @@ int vault_conf_prompt(void) {
 
 	printf("> .. Done\n");
 
-	printf("> Writing vault.conf..\n");
+	printf("> Writing vault.key..\n");
 
-	FILE* vault_conf = fopen("vault.conf", "w");
+	FILE* vault_conf = fopen("vault.key", "w");
 
 	if (!vault_conf) {
 		printf("> Failed to open vault.conf for writing.\n");
 		return 0;
 	}
 
-	fprintf(vault_conf, "globalkey=%s\n", globalkey_final);
+	fprintf(vault_conf, "%s", globalkey_final);
 	fclose(vault_conf);
 
 	printf("> .. Done.\n");
-	printf("> Changing vault.conf read permissions..\n");
+	printf("> Changing vault.key read permissions..\n");
 
-	system("chmod go-rwx vault.conf");
+	system("chmod go-rwx vault.key");
 
 	printf("> .. Done.\n");
 	printf("> Configuration generation completed successfully.\n");
 
 	return 1;
+}
+
+void sha256(char *string, char* output_buffer) {
+	unsigned char hash[SHA256_DIGEST_LENGTH];
+
+	SHA256_CTX sha256;
+	SHA256_Init(&sha256);
+	SHA256_Update(&sha256, string, strlen(string));
+	SHA256_Final(hash, &sha256);
+
+	for(int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+		sprintf(output_buffer + i, "%X", hash[i]);
+	}
 }
