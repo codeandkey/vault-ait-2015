@@ -1,7 +1,0 @@
-vault: Upload
-
-This is the program which Vault uses to upload the files to the remote interface.
-Can be used directly by the user, but no Vault-based encryption will take place.
-
-This program _only_ provides an interface for file transfer.
-Vault does all of the encryption magic.
