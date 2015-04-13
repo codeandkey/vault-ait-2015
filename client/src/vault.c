@@ -29,7 +29,6 @@ int main(int argc, char** argv) {
 	vault_print(VAULT_DBG, "Starting Vault..");
 
 	int exec_mode = VAULT_MODE_UNDEF;
-	int enc_mode = 0;
 
 	char* local_file = NULL;
 	char* remote_file = NULL;
@@ -38,8 +37,6 @@ int main(int argc, char** argv) {
 	for (int i = 0; i < argc; i++) {
 		if (!strcmp(argv[i], "--enc")) {
 			check_format(argc, argv, i, 1);
-
-			enc_mode = 1;
 			enc_key = argv[i + 1];
 		}
 
@@ -82,7 +79,7 @@ int main(int argc, char** argv) {
 			exec_mode = VAULT_MODE_ENC;
 			local_file = remote_file = argv[i + 1];
 		}
-		
+
 		if (!strcmp(argv[i], "--globaldec")) {
 			check_format(argc, argv, i, 1);
 			exec_mode = VAULT_MODE_DEC;
@@ -100,6 +97,22 @@ int main(int argc, char** argv) {
 	}
 
 	vault_print(VAULT_DBG, "key = [%s], localfile = [%s], remotefile = [%s]", enc_key, local_file, remote_file);
+
+	if (exec_mode == VAULT_MODE_CONFIG) {
+		vault_print(VAULT_DBG, "vault: starting config mode");
+
+		if (vault_conf_prompt()) {
+			vault_print(VAULT_DBG, "vault: config generation reported success\n");
+		} else {
+			vault_print(VAULT_DBG, "vault: config generation reported failure\n");
+		}
+
+		return 0;
+	}
+
+	vault_print(VAULT_DBG, "vault: reading configuration..\n");
+
+	char globalkey[1024] = {0};
 
 	return 0;
 }

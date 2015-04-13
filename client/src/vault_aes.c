@@ -11,8 +11,8 @@ void vault_encrypt_aes256(char* buffer, char* key) {
 
 	err = gcry_cipher_open(&hd, GCRY_CIPHER_AES256, CGRY_CIPHER_MODE_CBC, GCRY_CIPHER_SECURE);
 
-	if (err != 
-	
+	if (err !=
+
 }
 
 void vault_decrypt_aes256(char* buffer, char* key) {
