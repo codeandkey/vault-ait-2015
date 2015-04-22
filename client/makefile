@@ -5,7 +5,7 @@ LDFLAGS = -lssl -lcrypto -lgcrypt
 OUTPUT = vault
 VPATH = src
 
-SOURCES = vault.c vault_cli.c vault_conf.c vault_aes.c
+SOURCES = vault.c vault_cli.c vault_conf.c vault_aes.c vault_hash.c vault_encrypt.c
 
 OBJECTS = $(SOURCES:.c=.o)
 

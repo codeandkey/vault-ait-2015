@@ -5,28 +5,14 @@
 #include <string.h>
 
 #define VAULT_MODE_UNDEF -1
-
-/* VAULT_MODE_CONFIG : generate the global user key */
-#define VAULT_MODE_CONFIG 0
-
-/* VAULT_MODE_STORE : encrypt a file with the global user key and upload it */
-#define VAULT_MODE_STORE 1
-
-/* VAULT_MODE_GET : retrieve a file and decrypt it with the global user key */
-#define VAULT_MODE_GET 2
-
-/* VAULT_MODE_DEC : decrypt a file with the global user key */
-#define VAULT_MODE_DEC 3
-
-/* VAULT_MODE_ENC : encrypt a file with the global user key */
-#define VAULT_MODE_ENC 4
-
-/* VAULT_MODE_LS : list remote files */
-#define VAULT_MODE_LS 5
+#define VAULT_MODE_CONFIG 0 /* VAULT_MODE_CONFIG : generate the global user key */
+#define VAULT_MODE_STORE 1 /* VAULT_MODE_STORE : encrypt a file with the global user key and upload it */
+#define VAULT_MODE_GET 2 /* VAULT_MODE_GET : retrieve a file and decrypt it with the global user key */
+#define VAULT_MODE_DEC 3 /* VAULT_MODE_DEC : decrypt a file with the global user key */
+#define VAULT_MODE_ENC 4 /* VAULT_MODE_ENC : encrypt a file with the global user key */
+#define VAULT_MODE_LS 5 /* VAULT_MODE_LS : list remote files */
 
 void check_format(int argc, char** argv, int key, int expected_args);
-int encrypt_file(char* ifile, char* ofile, char* key, int mode_dec);
-int encrypt_file_inplace(char* file, char* key, int mode_dec);
 
 int main(int argc, char** argv) {
 	vault_print(VAULT_DBG, "Starting Vault..");
@@ -99,6 +85,14 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
+	char enc_key_hash[33];
+
+	if (enc_key) {
+		vault_hash(enc_key, enc_key_hash, "__vault_enc");
+		enc_key = enc_key_hash;
+		enc_key_hash[32] = 0;
+	}
+
 	vault_print(VAULT_DBG, "key = [%s], localfile = [%s], remotefile = [%s]", enc_key, local_file, remote_file);
 
 	if (exec_mode == VAULT_MODE_CONFIG) {
@@ -133,19 +127,35 @@ int main(int argc, char** argv) {
 	case VAULT_MODE_ENC:
 		/* We are simply encrypting a file with the global key. */
 		{
-			if (!encrypt_file_inplace(local_file, globalkey, 0)) {
-				vault_print(VAULT_DBG, "vault: encryption failed");
-			} else {
-				vault_print(VAULT_DBG, "vault: encryption succeeded");
+			int result = 1;
+
+			if (enc_key) {
+				result &= vault_encrypt_file_inplace(local_file, enc_key);
+			}
+
+			if (result) {
+				result &= vault_encrypt_file_inplace(local_file, globalkey);
+			}
+
+			if (!result) {
+				vault_print(VAULT_CRT, "vault: encryption failed");
 			}
 		}
 		break;
 	case VAULT_MODE_DEC:
 		{
-			if (!encrypt_file_inplace(local_file, globalkey, 1)) {
-				vault_print(VAULT_DBG, "vault: decryption failed");
-			} else {
-				vault_print(VAULT_DBG, "vault: decryption succeeded");
+			int result = 1;
+
+			if (enc_key) {
+				result &= vault_decrypt_file_inplace(local_file, enc_key);
+			}
+
+			if (result) {
+				result &= vault_decrypt_file_inplace(local_file, globalkey);
+			}
+
+			if (!result) {
+				vault_print(VAULT_CRT, "vault: decryption failed");
 			}
 		}
 		break;
@@ -161,60 +171,4 @@ void check_format(int argc, char** argv, int i, int expected_args) {
 			return;
 		}
 	}
-}
-
-int encrypt_file(char* ifilename, char* ofilename, char* key, int mode_dec) {
-	FILE* ifile = fopen(ifilename, "rb"), *ofile = fopen(ofilename, "wb");
-
-	if (!ifile || !ofile) {
-		vault_print(VAULT_CRT, "encrypt_file: failed to open files\n");
-		return 0;
-	}
-
-	fseek(ifile, 0, SEEK_END);
-	int ifile_size = ftell(ifile);
-	fseek(ifile, 0, SEEK_SET);
-
-	printf("encrypt_file: read file size as %d\n", ifile_size);
-
-	char* ifile_buffer = malloc(ifile_size + 1);
-
-	ifile_buffer[ifile_size] = 0;
-
-	fread(ifile_buffer, 1, ifile_size, ifile);
-
-	if (ifile_buffer[ifile_size - 1] == '\n') {
-		ifile_buffer[ifile_size-- - 1] = 0;
-	}
-
-	fclose(ifile);
-
-	if (!mode_dec) {
-		vault_encrypt_aes256(ifile_buffer, key);
-	} else {
-		vault_decrypt_aes256(ifile_buffer, key);
-	}
-
-	fwrite(ifile_buffer, 1, ifile_size, ofile);
-	fclose(ofile);
-
-	return 1;
-}
-
-int encrypt_file_inplace(char* filename, char* key, int mode_dec) {
-	char* newstr = malloc(strlen(filename) + 2);
-	newstr[strlen(filename) + 1] = 0;
-	newstr[0] = '.';
-	strcpy(newstr + 1, filename);
-
-	if (!encrypt_file(filename, newstr, key, mode_dec)) {
-		return 0;
-	}
-
-	char cmd[1024] = {0};
-	snprintf(cmd, 1024, "mv %s %s", newstr, filename);
-
-	system(cmd);
-
-	return 1;
 }

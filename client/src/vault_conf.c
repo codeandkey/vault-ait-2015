@@ -1,18 +1,17 @@
 #include "vault_conf.h"
+#include "vault_hash.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
-#include <openssl/sha.h>
-
 void sha256(char* str, char* buf);
 
 int vault_conf_prompt(void) {
-	const char* salt = "@#$vault";
+	char* salt = "@#$vault";
 
 	char azure_account_name[1024] = {0}, azure_account_key[1024] = {0};
-	unsigned char username[1024] = {0}, globalkey[1024];
+	char username[1024] = {0}, globalkey[1024];
 
 	printf("[vault_conf_prompt] Starting interactive configuration generation..\n\n");
 
@@ -47,25 +46,18 @@ int vault_conf_prompt(void) {
 	printf("> All credentials received.\n");
 	printf("> Generating user container..\n");
 
-	unsigned char container[SHA256_DIGEST_LENGTH + 1] = {0};
+	char container[33] = {0};
+	vault_hash(username, container, salt);
 
-	unsigned char* username_input = malloc(sizeof(unsigned char) * strlen(salt) * 2 + strlen((char*) username));
-
-	strcpy((char*) username_input, salt);
-	strcpy((char*) username_input + strlen(salt), (char*) username);
-	strcpy((char*) username_input + strlen(salt) + strlen((char*) username), salt);
-
-	printf("> [username_input = %s]\n", username_input);
-
-	sha256((char*) username_input, (char*) container);
-	container[SHA256_DIGEST_LENGTH] = 0;
+	container[32] = 0;
 
 	printf("> .. Done.\n");
 	printf("> Generating global key..\n");
 
-	unsigned char globalkey_final[SHA256_DIGEST_LENGTH + 1] = {0};
-	sha256((char*) globalkey, (char*) globalkey_final);
-	globalkey_final[SHA256_DIGEST_LENGTH] = 0;
+	char globalkey_final[33] = {0};
+	vault_hash(globalkey, globalkey_final, salt);
+
+	globalkey_final[32] = 0;
 
 	printf("> .. Done.\n");
 	printf("> Writing vaultio.conf..\n");
@@ -112,17 +104,4 @@ int vault_conf_prompt(void) {
 	printf("> Configuration generation completed successfully.\n");
 
 	return 1;
-}
-
-void sha256(char *string, char* output_buffer) {
-	unsigned char hash[SHA256_DIGEST_LENGTH];
-
-	SHA256_CTX sha256;
-	SHA256_Init(&sha256);
-	SHA256_Update(&sha256, string, strlen(string));
-	SHA256_Final(hash, &sha256);
-
-	for(int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-		sprintf(output_buffer + i, "%X", hash[i]);
-	}
 }
