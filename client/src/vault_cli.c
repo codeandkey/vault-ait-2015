@@ -17,7 +17,7 @@ void vault_print(uint8_t flags, const char* format, ...) {
 
 	printf(VAULT_DEBUG_COLORS[flags & VAULT_CRT]);
 	vprintf(format, args);
-	printf("\e[0;39m\n");
+	printf("\e[0;39m");
 
 	if (flags & VAULT_LOG) {
 		FILE* log_file = fopen(VAULT_LOG_FILE, "a");

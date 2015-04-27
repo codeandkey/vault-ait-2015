@@ -11,11 +11,12 @@
 #define VAULT_MODE_DEC 3 /* VAULT_MODE_DEC : decrypt a file with the global user key */
 #define VAULT_MODE_ENC 4 /* VAULT_MODE_ENC : encrypt a file with the global user key */
 #define VAULT_MODE_LS 5 /* VAULT_MODE_LS : list remote files */
+#define VAULT_MODE_SHARE 6 /* VAULT_MODE_SHARE : share file with another user */
 
 void check_format(int argc, char** argv, int key, int expected_args);
 
 int main(int argc, char** argv) {
-	vault_print(VAULT_DBG, "Starting Vault..");
+	vault_print(VAULT_DBG, "Starting Vault..\n");
 
 	int exec_mode = VAULT_MODE_UNDEF;
 
@@ -37,6 +38,13 @@ int main(int argc, char** argv) {
 			check_format(argc, argv, i, 1);
 			exec_mode = VAULT_MODE_STORE;
 			local_file = remote_file = argv[i + 1];
+		}
+
+		if (!strcmp(argv[i], "--share")) {
+			check_format(argc, argv, i, 2);
+			exec_mode = VAULT_MODE_SHARE;
+			local_file = argv[i + 1];
+			remote_file = argv[i + 2];
 		}
 
 		if (!strcmp(argv[i], "--rstore")) {
@@ -81,7 +89,7 @@ int main(int argc, char** argv) {
 	}
 
 	if (exec_mode == VAULT_MODE_UNDEF) {
-		vault_print(VAULT_CRT, "vault: no mode specified");
+		vault_print(VAULT_CRT, "vault: no mode specified\n");
 		return 1;
 	}
 
@@ -93,10 +101,10 @@ int main(int argc, char** argv) {
 		enc_key_hash[32] = 0;
 	}
 
-	vault_print(VAULT_DBG, "key = [%s], localfile = [%s], remotefile = [%s]", enc_key, local_file, remote_file);
+	vault_print(VAULT_DBG, "key = [%s], localfile = [%s], remotefile = [%s]\n", enc_key, local_file, remote_file);
 
 	if (exec_mode == VAULT_MODE_CONFIG) {
-		vault_print(VAULT_DBG, "vault: starting config mode");
+		vault_print(VAULT_DBG, "vault: starting config mode\n");
 
 		if (vault_conf_prompt()) {
 			vault_print(VAULT_DBG, "vault: config generation reported success\n");
@@ -159,6 +167,15 @@ int main(int argc, char** argv) {
 			}
 		}
 		break;
+	case VAULT_MODE_SHARE:
+		{
+			int result = vault_share(local_file, remote_file);
+
+			if (!result) {
+				vault_print(VAULT_CRT, "vault: sharing failed");
+			}
+		}
+		break;
 	}
 
 	return 0;
@@ -167,7 +184,7 @@ int main(int argc, char** argv) {
 void check_format(int argc, char** argv, int i, int expected_args) {
 	for (int tmp = i + 1; tmp <= i + expected_args; tmp++) {
 		if (tmp >= argc || (argv[tmp][0] == '-' && argv[tmp][1] == '-')) {
-			vault_print(VAULT_CRT, "option [%s] expects %d argument%s", argv[i], expected_args, expected_args == 1 ? "" : "s");
+			vault_print(VAULT_CRT, "option [%s] expects %d argument%s\n", argv[i], expected_args, expected_args == 1 ? "" : "s");
 			return;
 		}
 	}

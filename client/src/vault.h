@@ -6,5 +6,6 @@
 #include "vault_aes.h"
 #include "vault_hash.h"
 #include "vault_encrypt.h"
+#include "vault_share.h"
 
 #endif
