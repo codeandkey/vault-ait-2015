@@ -25,6 +25,10 @@ int main(int argc, char** argv) {
 	char* enc_key = NULL;
 
 	for (int i = 0; i < argc; i++) {
+		if (!strcmp(argv[i], "--help")) {
+			vault_print(VAULT_DBG, "Vault Client\nSupported modes : --enc --config --store --share --rstore --rget --get --globalenc --list");
+		}
+
 		if (!strcmp(argv[i], "--enc")) {
 			check_format(argc, argv, i, 1);
 			enc_key = argv[i + 1];

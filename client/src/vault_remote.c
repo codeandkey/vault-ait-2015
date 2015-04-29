@@ -8,6 +8,14 @@ int vault_remote_upload(char* localfile, char* remotefile) {
 int vault_remote_download(char* localfile, char* remotefile) {
 }
 
+/* getkey / addfile for sharing! */
+
+int vault_remote_getkey(char* localfile, char* remoteuser) {
+}
+
+int vault_remote_addfile(char* localfile, char* localkey, char* localsig, char* remoteuser) {
+}
+
 int vault_remote_list(char** file_list, int* file_list_size) {
 }
 

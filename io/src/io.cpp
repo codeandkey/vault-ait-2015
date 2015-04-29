@@ -5,8 +5,8 @@ using namespace Vault;
 static const std::string upload_file = "vaultio.conf";
 
 int main(int argc, char** argv) {
-	if (argc != 4) {
-		std::cout << "usage: vaultio <upload/download> <localfile> <remotefile>\n";
+	if (argc <= 4) {
+		std::cout << "usage: vaultio <upload/download> <localfile> <remotefile> [<username_override>]\n";
 		return 1;
 	}
 
@@ -18,6 +18,10 @@ int main(int argc, char** argv) {
 	std::map<std::string, std::string> key_map;
 
 	std::ifstream file(upload_file);
+
+	if (argc >= 5) {
+		key_map["azure_container"] = argv[4];
+	}
 
 	if (!file) {
 		std::cout << "vaultio: Failed to open configuration file. [" + upload_file + "]\n";
