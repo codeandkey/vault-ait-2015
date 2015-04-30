@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include <string>
 #include <map>
 
@@ -11,6 +12,7 @@ namespace Vault {
 
 		virtual bool Upload(std::string localfile, std::string remotefile);
 		virtual bool Download(std::string localfile, std::string remotefile);
+		virtual std::vector<std::string> List(void);
 	protected:
 		std::map<std::string, std::string> key_map;
 	};
