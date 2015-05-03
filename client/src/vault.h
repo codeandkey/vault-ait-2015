@@ -11,4 +11,12 @@
  * No global variables.
  */
 
+#define VAULT_VERSION_STRING "0.1"
+
 #include "platform.h"
+#include "syscall.h"
+#include "user.h"
+#include "arg.h"
+#include "wiz.h"
+#include "file.h"
+#include "sym_crypt.h"

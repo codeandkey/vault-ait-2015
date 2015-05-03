@@ -1,24 +1,24 @@
-SOURCES = vault.c syscall.c
+SOURCES = vault.c syscall.c user.c hash.c wiz.c arg.c file.c sym_crypt.c util.c
 
 VPATH = src
 
 LINUX_CC = gcc
-LINUX_CFLAGS = -std=gnu11 -Wall -fdiagnostics-color=auto
-LINUX_LDFLAGS = -lgcrypt
+LINUX_CFLAGS = -std=gnu11 -Wall -fdiagnostics-color=auto -DVAULT_BUILD_DEBUG -g
+LINUX_LDFLAGS = -lcrypto -lgcrypt -lssl
 
 LINUX_OUTPUT = vault
 LINUX_OBJECTS = $(SOURCES:.c=.o)
 
 WIN32_CC = x86_64-w64-mingw32-gcc
 WIN32_CFLAGS = -std=c99 -Wall
-WIN32_LDFLAGS = -lgcrypt
+WIN32_LDFLAGS = -lcrypto -lgcrypt -lssl
 
 WIN32_OUTPUT = vault.exe
 WIN32_OBJECTS = $(SOURCES:.c=.wo)
 
 OSX_CC = echo 'OSX toolchain not set up!' #
 OSX_CFLAGS = -std=c99 -Wall
-OSX_LDFLAGS = -lgcrypt
+OSX_LDFLAGS = -lcrypto -lgcrypt -lssl
 
 OSX_OUTPUT = vault_osx
 OSX_OBJECTS = $(SOURCES:.c=.xo)

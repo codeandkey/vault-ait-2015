@@ -4,7 +4,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-static int _vault_syscall_system(char* buffer) {
+static int _vault_syscall_system(char* buffer)
+{
 	/* Commands are assumed to be sanitized.. */
 	/* These are all the same. For now.. */
 
@@ -17,7 +18,8 @@ static int _vault_syscall_system(char* buffer) {
 #endif
 }
 
-int vault_syscall(const char* program_fmt, ...) {
+int vault_syscall(const char* program_fmt, ...)
+{
 	va_list args;
 	va_start(args, program_fmt);
 

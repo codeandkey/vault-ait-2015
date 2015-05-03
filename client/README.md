@@ -50,7 +50,7 @@ user _ info format
 Group file format
 -----------------
 
-	[32 bytes] Group version ID
+	[4 bytes] Group version ID
 	[32 bytes] Group key (encrypted with owner globalkey)
 	[4 bytes] User count
 	[32 bytes * N] User names
