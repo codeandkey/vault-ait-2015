@@ -1,10 +1,14 @@
-#ifndef VAULT_H
-#define VAULT_H
+#pragma once
 
-#include "vault_cli.h"
-#include "vault_conf.h"
-#include "vault_aes.h"
-#include "vault_hash.h"
-#include "vault_encrypt.h"
+/*
+ * Vault will be written in friendly C. (C99 / C11 compatible)
+ *
+ * The program will use tab characters for indentation and #pragma directives to keep everything clean.
+ * The program will follow K&R brace and indentation style.
+ *
+ * Naming style: GLOBAL_VALUE_CONSTANT_OR_MACRO, function_name, _internal_or_obscure_function, local_var, _private_struct_member, struct_member, _StructType, TypedefedStructType
+ *
+ * No global variables.
+ */
 
-#endif
+#include "platform.h"
