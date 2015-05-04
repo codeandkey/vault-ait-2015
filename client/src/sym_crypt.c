@@ -191,7 +191,7 @@ char* vault_decrypt_aes(char* buffer, int buffer_size, char* key, int key_size)
 int vault_encrypt_aes_file(char* infile, char* outfile, char* key, int key_size)
 {
 	int file_size = 0;
-	char* file_data = vault_file_read_size(infile, &file_size);
+	char* file_data = vault_file_read_size(&file_size, infile);
 
 	if (!file_data) {
 		return 0;
@@ -221,7 +221,7 @@ int vault_encrypt_aes_file(char* infile, char* outfile, char* key, int key_size)
 int vault_decrypt_aes_file(char* infile, char* outfile, char* key, int key_size)
 {
 	int file_size = 0;
-	char* file_data = vault_file_read_size(infile, &file_size);
+	char* file_data = vault_file_read_size(&file_size, infile);
 
 	if (!file_data) {
 		return 0;
@@ -255,12 +255,13 @@ char* _vault_crypt_getctr(void)
 
 #if defined(VAULT_PLATFORM_WIN32) || defined(VAULT_PLATFORM_OSX)
 	printf("Nonce generation has not been implemented yet for this platform!\n");
-	return NULL;
+	return "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
 #endif
 
 	FILE* dev_rand = fopen("/dev/urandom", "r");
 
 	if (!dev_rand) {
+		printf("Failed to open /dev/urandom for nonce generation.\n");
 		return NULL;
 	}
 

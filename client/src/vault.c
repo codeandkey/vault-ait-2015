@@ -36,14 +36,14 @@ int main(int argc, char** argv)
 		break;
 	case VAULT_ARG_MODE_ENCRYPT:
 		{
-			char* key = vault_file_read(".vault_key");
+			char* key = vault_file_read("~/.vault_key");
 			output = _test_element(vault_encrypt_aes_file(args.infile, args.outfile, key, strlen(key)), "globalkey encryption");
 			free(key);
 		}
 		break;
 	case VAULT_ARG_MODE_DECRYPT:
 		{
-			char* key = vault_file_read(".vault_key");
+			char* key = vault_file_read("~/.vault_key");
 			output = _test_element(vault_decrypt_aes_file(args.infile, args.outfile, key, strlen(key)), "globalkey decryption");
 			free(key);
 		}
