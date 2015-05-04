@@ -1,13 +1,15 @@
 #include "io.hpp"
 
+#include <unistd.h>
+
 using namespace Vault;
 
-static const std::string upload_file = "vaultio.conf";
+static std::string conf_file = std::string(getenv("HOME")) + "/.vaultio.conf";
 
 int main(int argc, char** argv) {
 	if (argc < 2) {
 		std::cout << "usage: vaultio <upload/download/list> <localfile> <remotefile> [<username_override>]\n";
-		return 1;
+		return -1;
 	}
 
 	bool mode_upload, mode_download, mode_list;
@@ -27,19 +29,11 @@ int main(int argc, char** argv) {
 
 	std::map<std::string, std::string> key_map;
 
-	std::ifstream file(upload_file);
-
-	if (!mode_list && argc >= 5) {
-		key_map["azure_container"] = argv[4];
-	}
-
-	if (mode_list && argc >= 3) {
-		key_map["azure_container"] = argv[2];
-	}
+	std::ifstream file(conf_file);
 
 	if (!file) {
-		std::cout << "vaultio: Failed to open configuration file. [" + upload_file + "]\n";
-		return 1;
+		std::cout << "vaultio: Failed to open configuration file. [" + conf_file + "]\n";
+		return -1;
 	}
 
 	while (file) {
@@ -49,6 +43,16 @@ int main(int argc, char** argv) {
 		std::getline(file, value);
 
 		key_map[key] = value;
+	}
+
+	if (!mode_list && argc >= 5) {
+		key_map["azure_container"] = argv[4];
+		std::cout << "Overriding with container " << argv[4] << "\n";
+	}
+
+	if (mode_list && argc >= 3) {
+		key_map["azure_container"] = argv[2];
+		std::cout << "Overriding with container " << argv[4] << "\n";
 	}
 
 	IO_Interface* interface = NULL;
@@ -74,10 +78,12 @@ int main(int argc, char** argv) {
 		}
 	} else {
 		std::cout << "vaultio: unknown mode " << argv[1] << "\n";
+		return -1;
 	}
 
 	if (!result) {
 		std::cout << "vaultio: Interface returned failure.\n";
+		return -1;
 	} else {
 		std::cout << "vaultio: Interface returned success.\n";
 	}

@@ -34,6 +34,38 @@ char* vault_file_read(char* filename, ...) {
 	return output;
 }
 
+char* vault_file_read_home(char* filename, ...) {
+	va_list args;
+	va_start(args, filename);
+
+	char fname[2048];
+	vsnprintf(fname, 2048, filename, args);
+
+	char fname2[2048];
+	snprintf(fname2, 2048, "%s/%s", vault_home_get(), fname);
+
+	int file_size = 0;
+	FILE* fd = fopen(fname2, "r");
+
+	if (!fd) {
+		return NULL;
+	}
+
+	fseek(fd, 0, SEEK_END);
+	file_size = ftell(fd);
+	fseek(fd, 0, SEEK_SET);
+
+	char* output = malloc(file_size + 1);
+	output[file_size] = 0;
+
+	fread(output, 1, file_size, fd);
+	fclose(fd);
+
+	va_end(args);
+
+	return output;
+}
+
 char* vault_file_read_size(int* file_size, char* filename, ...) {
 	va_list args;
 	va_start(args, filename);

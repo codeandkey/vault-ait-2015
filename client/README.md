@@ -13,10 +13,8 @@ Encryption schemes
 Vault uses AES-256 in GCM/GHASH mode for symmetric key encryption. This is used on all of the files to ensure security for the file content and integrity.
 Vault uses RSA with a 2048-bit key for security, integrity, and authentication with regard to sharing transactions.
 
-During initial configuration, a global user key is generated at random and stored locally.
-This functions as the user password and is not encrypted. (and also stores no sensitive information)
-
-The user's globalkey is used for all symmetric cryptography.
+During initial configuration, a root group is created with the owner as the only user.
+The root group cannot be modified.
 
 File header format
 ------------------
@@ -51,7 +49,7 @@ Group file format
 -----------------
 
 	[4 bytes] Group version ID
-	[32 bytes] Group key (encrypted with owner globalkey)
+	[32 bytes] Owner username
 	[4 bytes] User count
 	[32 bytes * N] User names
-	[32 bytes * N] User keys (encrypted with respective user public keys)
+	[32 bytes * N] User keys (encrypted with respective user public keys, then signed with owner private)
