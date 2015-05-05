@@ -31,12 +31,9 @@ Server-side user directory format
 
 	username/
 		user_info
+		user_groups
 		public_key
-		<user files>
-		<group files>
-
-Users files are prefixed with "file-"
-Group files are prefixed with "group-"
+		<groupnameN/filenameN>
 
 user _ info format
 ------------------
@@ -45,11 +42,18 @@ user _ info format
 	[4 bytes] Group count
 	[32 bytes * N] Group names
 
+The group count and group names list indicates the groups which this user OWNS.
+Groups which the user belong to are listed in the user _ groups file.
+
+user _ groups format (simply a list of groups the user belongs to)
+--------------------
+	<username>/<groupname>
+
 Group file format
 -----------------
 
+	[32 bytes] Group version timestamp
 	[4 bytes] Group version ID
-	[32 bytes] Owner username
 	[4 bytes] User count
 	[32 bytes * N] User names
-	[32 bytes * N] User keys (encrypted with respective user public keys, then signed with owner private)
+	[32 bytes * N] User keys (encrypted with respective user public keys)
