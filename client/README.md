@@ -52,8 +52,9 @@ user _ groups format (simply a list of groups the user belongs to)
 Group file format
 -----------------
 
-	[32 bytes] Group version timestamp
-	[4 bytes] Group version ID
-	[4 bytes] User count
-	[32 bytes * N] User names
-	[32 bytes * N] User keys (encrypted with respective user public keys)
+	username/groupname/group_version [32 bytes] Group version timestamp [4 bytes] Group version ID, incremented with each modification
+	username/groupname/group_version.sig [signature]
+	username/groupname/group_list [newline-separated list of all group users]
+	username/groupname/group_list.sig [signature]
+	username/groupname/key/memberusername [512] User key, encrypted with memberusername's public
+	username/groupname/key/memberusername.sig [Signature of user key to verify authenticity]

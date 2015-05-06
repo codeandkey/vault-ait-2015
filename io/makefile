@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -std=c++11 -Wall -pedantic
+CFLAGS = -std=c++11 -Wall -pedantic -g
 LDFLAGS = -lcpprest -lazurestorage
 
 SOURCES = io.cpp interface.cpp azure.cpp

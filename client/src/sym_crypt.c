@@ -190,14 +190,13 @@ char* vault_decrypt_aes(char* buffer, int buffer_size, char* key, int key_size)
 
 int vault_encrypt_aes_file(char* infile, char* outfile, char* key, int key_size)
 {
-	int file_size = 0;
-	char* file_data = vault_file_read_size(&file_size, infile);
+	vault_buffer file_buf = vault_file_read(infile);
 
-	if (!file_data) {
+	if (!file_buf.ptr) {
 		return 0;
 	}
 
-	char* enc_data = vault_encrypt_aes(file_data, file_size, key, key_size);
+	char* enc_data = vault_encrypt_aes(file_buf.ptr, file_buf.size, key, key_size);
 
 	if (!enc_data) {
 		return 0;
@@ -209,10 +208,10 @@ int vault_encrypt_aes_file(char* infile, char* outfile, char* key, int key_size)
 		return 0;
 	}
 
-	fwrite(enc_data, 1, file_size + 64, fd);
+	fwrite(enc_data, 1, file_buf.size + 64, fd);
 	fclose(fd);
 
-	free(file_data);
+	free(file_buf.ptr);
 	free(enc_data);
 
 	return 1;
@@ -220,14 +219,13 @@ int vault_encrypt_aes_file(char* infile, char* outfile, char* key, int key_size)
 
 int vault_decrypt_aes_file(char* infile, char* outfile, char* key, int key_size)
 {
-	int file_size = 0;
-	char* file_data = vault_file_read_size(&file_size, infile);
+	vault_buffer file_buf = vault_file_read(infile);
 
-	if (!file_data) {
+	if (!file_buf.ptr) {
 		return 0;
 	}
 
-	char* enc_data = vault_decrypt_aes(file_data, file_size, key, key_size);
+	char* enc_data = vault_decrypt_aes(file_buf.ptr, file_buf.size, key, key_size);
 
 	if (!enc_data) {
 		return 0;
@@ -239,10 +237,10 @@ int vault_decrypt_aes_file(char* infile, char* outfile, char* key, int key_size)
 		return 0;
 	}
 
-	fwrite(enc_data, 1, file_size - 64, fd);
+	fwrite(enc_data, 1, file_buf.size + 64, fd);
 	fclose(fd);
 
-	free(file_data);
+	free(file_buf.ptr);
 	free(enc_data);
 
 	return 1;

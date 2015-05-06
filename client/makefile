@@ -1,4 +1,4 @@
-SOURCES = vault.c syscall.c user.c hash.c wiz.c arg.c file.c sym_crypt.c util.c home.c
+SOURCES = vault.c syscall.c user.c hash.c wiz.c arg.c file.c sym_crypt.c util.c pki_crypt.c group.c
 
 VPATH = src
 

@@ -4,7 +4,7 @@
 
 using namespace Vault;
 
-static std::string conf_file = std::string(getenv("HOME")) + "/.vaultio.conf";
+static std::string conf_file = "/usr/local/share/vault/vaultio.conf";
 
 int main(int argc, char** argv) {
 	if (argc < 2) {
