@@ -47,12 +47,10 @@ int main(int argc, char** argv) {
 
 	if (!mode_list && argc >= 5) {
 		key_map["azure_container"] = argv[4];
-		std::cout << "Overriding with container " << argv[4] << "\n";
 	}
 
 	if (mode_list && argc >= 3) {
 		key_map["azure_container"] = argv[2];
-		std::cout << "Overriding with container " << argv[4] << "\n";
 	}
 
 	IO_Interface* interface = NULL;
@@ -84,8 +82,6 @@ int main(int argc, char** argv) {
 	if (!result) {
 		std::cout << "vaultio: Interface returned failure.\n";
 		return -1;
-	} else {
-		std::cout << "vaultio: Interface returned success.\n";
 	}
 
 	return 0;
