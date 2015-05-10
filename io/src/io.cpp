@@ -80,7 +80,14 @@ int main(int argc, char** argv) {
 	}
 
 	if (!result) {
-		std::cout << "vaultio: Interface returned failure.\n";
+		std::cout << "vaultio: Interface returned failure.\nFormat : ";
+
+		for (int i = 0; i < argc; i++) {
+			std::cout << argv[i] << " ";
+		}
+
+		std::cout << "\n";
+
 		return -1;
 	}
 

@@ -14,6 +14,16 @@
 
 static char* _vault_group_genkey(void);
 
+static int _vault_touch_remote(char* groupname, char* filename, int sig);
+
+static int _vault_genkeys(char* groupname); /* Generates a key, uploads and signs it for all users. */
+
+static int _vault_download_safe(char* username, char* groupname, char* filename, char* target_filename, int sig); /* Downloads the file and checks the signature. */
+static int _vault_upload_safe(char* groupname, char* filename, char* target_filename, int sig); /* Uploads the file along with the signature. */
+
+static int _vault_add_line(char* username, char* groupname, char* filename, char* line, int sig);
+static int _vault_del_line(char* username, char* groupname, char* filename, char* line, int sig);
+
 int vault_group_create_root(void)
 {
 	return vault_group_create("root");
@@ -23,9 +33,7 @@ int vault_group_create(char* groupname)
 {
 	int sane = 1;
 
-	sane &= strcmp(groupname, "public_key") ? 1 : 0;
-	sane &= strcmp(groupname, "user_info") ? 1 : 0;
-	sane &= strcmp(groupname, "user_groups") ? 1 : 0;
+	sane &= strcmp(groupname, "info") ? 1 : 0;
 
 	sane &= !strstr(groupname, "/") ? 1 : 0;
 
@@ -37,35 +45,13 @@ int vault_group_create(char* groupname)
 	char* username = vault_file_read("/usr/local/share/vault/vault_user").ptr;
 	username[strlen(username) - 1] = 0; /* No newline. */
 
-	if (vault_syscall("touch /usr/local/share/vault/tmp_empty")) {
-		printf("Failed to touch empty file /usr/local/share/vault/tmp_empty.\n");
-		return 0;
-	}
+	_vault_touch_remote(groupname, "group_list", 1);
+	_vault_touch_remote(groupname, "group_version", 1);
 
-	if (vault_syscall("vaultio upload /usr/local/share/vault/tmp_empty %s/group_list %s", groupname, username)) {
-		printf("Failed to upload blank group list file.\n");
-		return 0;
-	}
+	printf("Touched remote group files.\n");
+	printf("Adding user..\n");
 
-	char nullbuf[37];
-	memset(nullbuf, 0, 37);
-
-	unsigned int timestamp = time(NULL);
-	memcpy(nullbuf, &timestamp, sizeof(unsigned int));
-
-	if (!vault_file_write_raw("/usr/local/share/vault/tmp_version", nullbuf, 37)) {
-		printf("Failed to write temporary version file.\n");
-		return 0;
-	}
-
-	if (vault_syscall("vaultio upload /usr/local/share/vault/tmp_version %s/group_version %s", groupname, username)) {
-		printf("Failed to upload blank group version.\n");
-		return 0;
-	}
-
-	vault_syscall("rm -f /usr/local/share/vault/tmp_version /usr/local/share/vault/tmp_empty");
-
-	vault_group_add_user(groupname, NULL);
+	vault_group_add_user(groupname, username);
 
 	printf("Created group %s/%s.\n", username, groupname);
 	free(username);
@@ -75,199 +61,6 @@ int vault_group_create(char* groupname)
 int vault_group_delete(char* groupname)
 {
 	return 0;
-}
-
-int vault_group_add_user(char* groupname, char* username) {
-	printf("Adding %s to %s\n", username, groupname);
-
-	/* We have to do lots of things to safely finish this.
-	 * Process :
-	 * Check if modifier is owner
-	 * Check if user is already in the group
-	 * Add user to group member list, add group to user group list
-	 * Generate a fresh group key
-	 * Encrypt the new key for all members
-	 * Update the group version file with a timestamp and incremented version ID
-	 * Generate appropriate signatures for all files
-	 */
-
-	char* owner_username = vault_file_read("/usr/local/share/vault/vault_user").ptr;
-	owner_username[strlen(owner_username) - 1] = 0;
-
-	printf("owner_username = %s, username = %s\n", owner_username, username);
-
-	int result = 0;
-
-	result = !vault_syscall("vaultio download /usr/local/share/vault/vault_group_version %s/group_version %s", groupname, owner_username);
-
-	if (!result) {
-		printf("Failed to download group version.\n");
-		return 0;
-	}
-
-	result = !vault_syscall("vaultio download /usr/local/share/vault/vault_group_list %s/group_list %s", groupname, owner_username);
-
-	if (!result) {
-		printf("Failed to download group member list.\n");
-		return 0;
-	}
-
-	/* We want to ensure that the first username is our username. */
-
-	char* group_list_buffer = vault_file_read("/usr/local/share/vault/vault_group_list").ptr;
-	char* first_entry = strtok(group_list_buffer, "\n");
-
-	if (username) {
-		if (strcmp(first_entry, owner_username)) {
-			printf("You are not the owner of the group! [you are %s, owner is %s]\n", first_entry, owner_username);
-			return 0;
-		}
-	}
-
-	/* From this point on, true-owners and foriegners are treated the same. */
-
-	if (!username) {
-		username = owner_username;
-	}
-
-	/* We need to check if the user is already in the group. */
-
-	char* group_list_buf = vault_file_read("/usr/local/share/vault/vault_group_list").ptr;
-	char* group_list_username = strtok(group_list_buf, "\n");
-
-	while (group_list_username) {
-		if (!strcmp(group_list_username, username)) {
-			printf("User is already in group!\n");
-			return 0;
-		}
-
-		group_list_username = strtok(NULL, "\n");
-	}
-
-	free(group_list_buf);
-
-	/* The user is not in the group. */
-	/* Add the user to the grouplist, and add the group to the user's list. */
-
-	if (vault_syscall("echo %s >> /usr/local/share/vault/vault_group_list", username)) {
-		printf("Failed to append new user to group list.\n");
-		return 0;
-	}
-
-	if (vault_syscall("vaultio upload /usr/local/share/vault/vault_group_list %s/group_list %s", groupname, owner_username)) {
-		printf("Failed to upload new group list.\n");
-		return 0;
-	}
-
-	if (!vault_crypt_pki_sign("/usr/local/share/vault/vault_group_list", "/usr/local/share/vault/vault_group_list.sig")) {
-		printf("Failed to sign group list.\n");
-		return 0;
-	}
-
-	if (vault_syscall("vaultio upload /usr/local/share/vault/vault_group_list.sig %s/group_list.sig %s", groupname, owner_username)) {
-		printf("Failed to upload group list signature.\n");
-		return 0;
-	}
-
-	if (vault_syscall("vaultio download /usr/local/share/vault/vault_user_groups user_groups %s", username)) {
-		printf("Failed to download user group file.\n");
-		return 0;
-	}
-
-	if (vault_syscall("echo %s/%s >> /usr/local/share/vault/vault_user_groups", owner_username, groupname)) {
-		printf("Failed to append group to user group list.\n");
-		return 0;
-	}
-
-	if (vault_syscall("vaultio upload /usr/local/share/vault/vault_user_groups user_groups %s", username)) {
-		printf("Failed to upload user group list.\n");
-		return 0;
-	}
-
-	/* At this point, we've updated the user_groups file of the target user and also the group member list. */
-	/* The next step is to generate a fresh key. */
-
-	char* new_key = _vault_group_genkey();
-
-	/* With the new key, encrypt/sign/upload it for each group member. */
-
-	group_list_buf = vault_file_read("/usr/local/share/vault/vault_group_list").ptr;
-	group_list_username = strtok(group_list_buf, "\n");
-
-	while (group_list_username) {
-		printf("Encrypting and uploading key for user %s\n", group_list_username);
-
-		if (vault_syscall("vaultio download /usr/local/share/vault/vault_tmp_public_key public_key %s", group_list_username)) {
-			printf("Failed to download user public key.\n");
-			continue;
-		}
-
-		vault_buffer user_key = vault_crypt_pki_encrypt_buf(new_key, 32, "/usr/local/share/vault/vault_tmp_public_key");
-
-		vault_file_write_raw("/usr/local/share/vault/vault_tmp_user_key", user_key.ptr, user_key.size);
-
-		if (!vault_crypt_pki_sign("/usr/local/share/vault/vault_tmp_user_key", "/usr/local/share/vault/vault_tmp_user_key.sig")) {
-			printf("Failed to sign user key.\n");
-			continue;
-		}
-
-		if (vault_syscall("vaultio upload /usr/local/share/vault/vault_tmp_user_key %s/key/%s %s", groupname, username, owner_username)) {
-			printf("Failed to upload user key.\n");
-			continue;
-		}
-
-		if (vault_syscall("vaultio upload /usr/local/share/vault/vault_tmp_user_key.sig %s/key/%s.sig %s", groupname, username, owner_username)) {
-			printf("Failed to upload user key signature.\n");
-			continue;
-		}
-
-		vault_syscall("rm -f /usr/local/share/vault/vault_tmp_public_key /usr/local/share/vault/vault_tmp_user_key /usr/local/share/vault/vault_tmp_user_key.sig");
-
-		group_list_username = strtok(NULL, "\n");
-	}
-
-	printf("Updating group version.\n");
-
-	char* tmp_group_version = vault_file_read("/usr/local/share/vault/vault_group_version").ptr;
-
-	char group_version[36] = {0};
-	unsigned int timestamp = time(NULL);
-
-	uint32_t* group_version_id = (uint32_t*) (group_version + 32);
-	uint32_t* store_version_id = (uint32_t*) (tmp_group_version + 32);
-
-	*group_version_id = *store_version_id + 1;
-	memcpy(group_version, &timestamp, sizeof(unsigned int));
-
-	free(tmp_group_version);
-
-	printf("Uploading new group version..\n");
-
-	vault_file_write_raw("/usr/local/share/vault/vault_group_version", group_version, 36);
-
-	if (!vault_crypt_pki_sign("/usr/local/share/vault/vault_group_version", "/usr/local/share/vault/vault_group_version.sig")) {
-		printf("Failed to sign group version.\n");
-		return 0;
-	}
-
-	if (vault_syscall("vaultio upload /usr/local/share/vault/vault_group_version %s/group_version %s", groupname, username)) {
-		printf("Failed to upload updated group version.\n");
-		return 0;
-	}
-
-	if (vault_syscall("vaultio upload /usr/local/share/vault/vault_group_version.sig %s/group_version.sig %s", groupname, username)) {
-		printf("Failed to upload updated group version signature.\n");
-		return 0;
-	}
-
-	printf("Cleaning up temp files.\n");
-
-	vault_syscall("rm -f /usr/local/share/vault/vault_group_version /usr/local/share/vault/vault_user_groups /usr/local/share/vault/vault_group_list");
-
-	free(new_key);
-	free(owner_username);
-	free(group_list_buffer);
-	return 1;
 }
 
 char* _vault_group_genkey(void)
@@ -302,4 +95,276 @@ int vault_group_create_quick(char* groupname, char* username) {
 	}
 
 	return 1;
+}
+
+int _vault_genkeys(char* groupname) {
+	char* username = vault_file_read("/usr/local/share/vault/vault_user").ptr;
+	username[strlen(username) - 1] = 0;
+
+	if (vault_syscall("vaultio download /usr/local/share/vault/vault_group_list %s/group_list %s", groupname, username)) {
+		printf("Failed to download group list.\n");
+		return 0;
+	}
+
+	char* new_key = _vault_group_genkey();
+
+	/* We iterate through each user.. */
+
+	char* group_list_buf = vault_file_read("/usr/local/share/vault/vault_group_list").ptr;
+	char* group_list_username = strtok(group_list_buf, "\n");
+
+	printf("Starting key upload loop.\n");
+
+	while (group_list_username) {
+		printf("Encrypting and uploading key for user %s\n", group_list_username);
+
+		if (vault_syscall("vaultio download /usr/local/share/vault/vault_tmp_public_key info/public_key %s", group_list_username)) {
+			printf("Failed to download user public key.\n");
+			continue;
+		}
+
+		vault_buffer user_key = vault_crypt_pki_encrypt_buf(new_key, 32, "/usr/local/share/vault/vault_tmp_public_key");
+
+		vault_file_write_raw("/usr/local/share/vault/vault_tmp_user_key", user_key.ptr, user_key.size);
+
+		if (!vault_crypt_pki_sign("/usr/local/share/vault/vault_tmp_user_key", "/usr/local/share/vault/vault_tmp_user_key.sig")) {
+			printf("Failed to sign user key.\n");
+			continue;
+		}
+
+		if (vault_syscall("vaultio upload /usr/local/share/vault/vault_tmp_user_key %s/key/%s %s", groupname, group_list_username, username)) {
+			printf("Failed to upload user key.\n");
+			continue;
+		}
+
+		if (vault_syscall("vaultio upload /usr/local/share/vault/vault_tmp_user_key.sig %s/key/%s.sig %s", groupname, group_list_username, username)) {
+			printf("Failed to upload user key signature.\n");
+			continue;
+		}
+
+		vault_syscall("rm -f /usr/local/share/vault/vault_tmp_public_key /usr/local/share/vault/vault_tmp_user_key /usr/local/share/vault/vault_tmp_user_key.sig");
+
+		group_list_username = strtok(NULL, "\n");
+	}
+
+	printf("Finished uploading keys.\n");
+
+	vault_syscall("rm -f /usr/local/share/vault/vault_group_list");
+
+	free(new_key);
+	free(username);
+	free(group_list_buf);
+	free(group_list_username);
+
+	return 1;
+}
+
+int _vault_touch_remote(char* groupname, char* filename, int sig) {
+	char* username = vault_file_read("/usr/local/share/vault/vault_user").ptr;
+	username[strlen(username) - 1] = 0;
+
+	vault_syscall("touch /usr/local/share/vault/vault_tmp_empty");
+
+	if (vault_syscall("vaultio upload /usr/local/share/vault/vault_tmp_empty %s/%s %s", groupname, filename, username)) {
+		printf("Failed to touch remote file.\n");
+		return 0;
+	}
+
+	if (sig) {
+		vault_crypt_pki_sign("/usr/local/share/vault/vault_tmp_empty", "/usr/local/share/vault/vault_tmp_empty.sig");
+
+		if (vault_syscall("vaultio upload /usr/local/share/vault/vault_tmp_empty.sig %s/%s.sig %s", groupname, filename, username)) {
+			printf("Failed to upload remote signature.\n");
+			return 0;
+		}
+	}
+
+	vault_syscall("rm -f /usr/local/share/vault/vault_tmp_empty /usr/local/share/vault/vault_tmp_empty.sig");
+	free(username);
+
+	return 0;
+}
+
+int _vault_download_safe(char* username, char* groupname, char* filename, char* target_filename, int sig) {
+	printf("[debug] Downloading %s/%s from user %s to local file %s\n", groupname, filename, username, target_filename);
+
+	if (vault_syscall("vaultio download /usr/local/share/vault/vault_public_key info/public_key %s", username)) {
+		printf("Failed to download public key.\n");
+		return 0;
+	}
+
+	if (vault_syscall("vaultio download %s %s/%s %s", target_filename, groupname, filename, username)) {
+		printf("Failed to download target file.\n");
+		return 0;
+	}
+
+	if (sig) {
+		if (vault_syscall("vaultio download /usr/local/share/vault/vault_tmp_file.sig %s/%s.sig %s", groupname, filename, username)) {
+			printf("Failed to download target file signature.\n");
+			return 0;
+		}
+
+		if (!vault_crypt_pki_verify(target_filename, "/usr/local/share/vault/vault_tmp_file.sig", "/usr/local/share/vault/vault_public_key")) {
+			printf("File verification failed.\n");
+			return 0;
+		}
+	}
+
+	vault_syscall("rm -f /usr/local/share/vault/vault_tmp_file.sig /usr/local/share/vault/vault_public_key");
+
+	return 1;
+}
+
+int _vault_upload_safe(char* groupname, char* filename, char* target_filename, int sig) {
+	printf("[debug] Uploading %s to %s/%s\n", filename, groupname, target_filename);
+
+	char* username = vault_file_read("/usr/local/share/vault/vault_user").ptr;
+	username[strlen(username) - 1] = 0;
+
+	if (!vault_crypt_pki_sign(filename, "/usr/local/share/vault/vault_tmp_sig")) {
+		printf("Failed to sign file.\n");
+		return 0;
+	}
+
+	if (vault_syscall("vaultio upload %s %s/%s %s", filename, groupname, target_filename, username)) {
+		printf("Failed to upload file.\n");
+		return 0;
+	}
+
+	if (sig) {
+		if (vault_syscall("vaultio upload /usr/local/share/vault/vault_tmp_sig %s/%s.sig %s", groupname, target_filename, username)) {
+			printf("Failed to upload file signature.\n");
+			return 0;
+		}
+	}
+
+	vault_syscall("rm -f /usr/local/share/vault/vault_tmp_sig");
+
+	free(username);
+	return 1;
+}
+
+int vault_group_add_user(char* groupname, char* username) {
+	/* First, add the user to the group list. */
+
+	char* owner = vault_file_read("/usr/local/share/vault/vault_user").ptr;
+	owner[strlen(owner) - 1] = 0;
+
+	char* group_list_line = malloc(strlen(owner) + strlen(groupname) + 2);
+
+	memcpy(group_list_line, owner, strlen(owner));
+	group_list_line[strlen(owner)] = '/';
+	memcpy(group_list_line + strlen(owner) + 1, groupname, strlen(groupname));
+	group_list_line[strlen(owner) + strlen(groupname) + 1] = 0;
+
+	/* We have smaller subroutines, so this can look a bit nicer. */
+	/* Add a line to the user's group list. */
+
+	if (!_vault_add_line(username, "info", "user_groups", group_list_line, 0)) {
+		printf("Failed to add line to user groups file.\n");
+		return 0;
+	}
+
+	/* Add the user to the group members file. */
+
+	if (!_vault_add_line(owner, groupname, "group_list", username, 1)) {
+		printf("Failed to add user to group member list.\n");
+		return 0;
+	}
+
+	if (!_vault_genkeys(groupname)) {
+		printf("Failed to regenerate keys.\n");
+		return 0;
+	}
+
+	free(owner);
+	free(group_list_line);
+	return 1;
+}
+
+int vault_group_remove_user(char* groupname, char* username) {
+	/* First, add the user to the group list. */
+
+	char* owner = vault_file_read("/usr/local/share/vault/vault_user").ptr;
+	owner[strlen(owner) - 1] = 0;
+
+	char* group_list_line = malloc(strlen(owner) + strlen(groupname) + 2);
+
+	memcpy(group_list_line, owner, strlen(owner));
+	group_list_line[strlen(owner)] = '/';
+	memcpy(group_list_line + strlen(owner) + 1, groupname, strlen(groupname));
+	group_list_line[strlen(owner) + strlen(groupname) + 1] = 0;
+
+	/* We have smaller subroutines, so this can look a bit nicer. */
+	/* Add a line to the user's group list. */
+
+	if (!_vault_del_line(username, "info", "user_groups", group_list_line, 0)) {
+		printf("Failed to add line to user groups file.\n");
+		return 0;
+	}
+
+	/* Add the user to the group members file. */
+
+	if (!_vault_del_line(owner, groupname, "group_list", username, 1)) {
+		printf("Failed to add user to group member list.\n");
+		return 0;
+	}
+
+	if (!_vault_genkeys(groupname)) {
+		printf("Failed to regenerate keys.\n");
+		return 0;
+	}
+
+	free(owner);
+	free(group_list_line);
+	return 1;
+}
+
+int _vault_add_line(char* username, char* groupname, char* filename, char* line, int sig) {
+	printf("[debug] Adding %s to %s:%s/%s, sig %d\n", line, username, groupname, filename, sig);
+
+	if (!_vault_download_safe(username, groupname, filename, "/usr/local/share/vault/al_file", sig)) {
+		printf("Failed to get file.\n");
+		return 0;
+	}
+
+	if (vault_syscall("echo %s >> /usr/local/share/vault/al_file", line)) {
+		printf("Failed to add line.\n");
+		return 0;
+	}
+
+	if (!_vault_upload_safe(groupname, "/usr/local/share/vault/al_file", filename, sig)) {
+		printf("Failed to upload file.\n");
+		return 0;
+	}
+
+	vault_syscall("rm -f /usr/local/share/vault/al_file");
+	return 1;
+}
+
+int _vault_del_line(char* username, char* groupname, char* filename, char* line, int sig) {
+	if (!_vault_download_safe(username, groupname, filename, "/usr/local/share/vault/dl_file", sig)) {
+		printf("Failed to get file.\n");
+		return 0;
+	}
+
+	if (vault_syscall("sed '/%s/d' /usr/local/share/vault/dl_file > /usr/local/share/vault/dl_file", line)) {
+		printf("Failed to delete line.\n");
+		return 0;
+	}
+
+	if (!_vault_upload_safe(groupname, "/usr/local/share/vault/dl_file", filename, sig)) {
+		printf("Failed to upload file.\n");
+		return 0;
+	}
+
+
+	vault_syscall("rm -f /usr/local/share/vault/dl_file");
+	return 1;
+}
+
+int vault_group_add_file(char* groupname, char* filename) {
+	/* We want to encrypt a file with the key and then upload it. */
+
+	
 }

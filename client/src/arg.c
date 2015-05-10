@@ -1,6 +1,7 @@
 #include "arg.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 static int _vault_args_check_format(int argc, char** argv, int i, int arg_count);
@@ -153,6 +154,10 @@ static int _vault_args_check_format(int argc, char** argv, int index, int arg_co
 		if (valid_args == arg_count) {
 			return 1;
 		}
+	}
+
+	if (valid_args != arg_count) {
+		printf("%s expects %d arguments.\n", argv[index], arg_count);
 	}
 
 	return (valid_args == arg_count);

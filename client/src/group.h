@@ -14,10 +14,3 @@ int vault_group_remove_user(char* groupname, char* username); /* This function w
 
 int vault_group_add_file(char* groupname, char* filename); /* This function will copy a file from the root group to <groupname>. */
 int vault_group_revoke_file(char* groupname, char* filename); /* This function will revoke a file from a group (not entirely secure, the group may have already decrypted the file), and if the group is root the file will be revoked from all groups. */
-
-char* vault_group_get_users(char* groupname); /* Get users for a group. Returns a static buffer, call with NULL to get next user for the current group. Returns NULL when no more users or error occurred. */
-char* vault_group_get_key(char* groupname, char* username); /* Get your decryption key from a group. */
-
-int vault_group_verify_file(char* username, char* groupname, char* file, char* sigfile);
-
-int vault_group_create_quick(char* groupname, char* username); /* This function is a shortcut for creating a group between the owner and another user. */

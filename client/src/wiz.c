@@ -50,7 +50,7 @@ int vault_wiz(void)
 		return 0;
 	}
 
-	result &= !vault_syscall("vaultio upload /usr/local/share/vault/vault_pki_public.pem public_key %s", username);
+	result &= !vault_syscall("vaultio upload /usr/local/share/vault/vault_pki_public.pem info/public_key %s", username);
 
 	if (!result) {
 		printf("Failed to upload public key.\n");
@@ -60,7 +60,14 @@ int vault_wiz(void)
 	printf("Touching remote group index.\n");
 
 	result &= !vault_syscall("touch /usr/local/share/vault/tmp");
-	result &= !vault_syscall("vaultio upload /usr/local/share/vault/tmp user_groups %s", username);
+	result &= !vault_syscall("vaultio upload /usr/local/share/vault/tmp info/user_groups %s", username);
+
+	if (!vault_crypt_pki_sign("/usr/local/share/vault/tmp", "/usr/local/share/vault/tmp.sig")) {
+		printf("Failed to sign usergroups file.\n");
+		return 0;
+	}
+
+	result &= !vault_syscall("vaultio upload /usr/local/share/vault/tmp.sig info/user_groups.sig %s", username);
 
 	if (!result) {
 		printf("Failed to upload blank usergroups file.\n");

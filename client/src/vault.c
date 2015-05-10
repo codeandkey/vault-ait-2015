@@ -31,6 +31,12 @@ int main(int argc, char** argv)
 	case VAULT_ARG_MODE_DELGROUP:
 		output = _test_element(vault_group_delete(args.groupname), "group deletion");
 		break;
+	case VAULT_ARG_MODE_ADDUSER:
+		output = _test_element(vault_group_add_user(args.groupname, args.username), "user addition");
+		break;
+	case VAULT_ARG_MODE_DELUSER:
+		output = _test_element(vault_group_remove_user(args.groupname, args.username), "user deletion");
+		break;
 	}
 
 	return output;
