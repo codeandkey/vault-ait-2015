@@ -37,6 +37,9 @@ int main(int argc, char** argv)
 	case VAULT_ARG_MODE_DELUSER:
 		output = _test_element(vault_group_remove_user(args.groupname, args.username), "user deletion");
 		break;
+	case VAULT_ARG_MODE_UPLOAD:
+		output = _test_element(vault_group_add_file(args.groupname, args.filename), "file upload");
+		break;
 	}
 
 	return output;

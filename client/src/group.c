@@ -5,6 +5,7 @@
 #include "syscall.h"
 #include "platform.h"
 #include "pki_crypt.h"
+#include "sym_crypt.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -123,9 +124,8 @@ int _vault_genkeys(char* groupname) {
 			continue;
 		}
 
-		vault_buffer user_key = vault_crypt_pki_encrypt_buf(new_key, 32, "/usr/local/share/vault/vault_tmp_public_key");
-
-		vault_file_write_raw("/usr/local/share/vault/vault_tmp_user_key", user_key.ptr, user_key.size);
+		vault_file_write_raw("/usr/local/share/vault/vault_tmp_user_key_unenc", new_key, 32);
+		vault_crypt_pki_encrypt("/usr/local/share/vault/vault_tmp_user_key_unenc", "/usr/local/share/vault/vault_tmp_user_key", "/usr/local/share/vault/vault_tmp_public_key");
 
 		if (!vault_crypt_pki_sign("/usr/local/share/vault/vault_tmp_user_key", "/usr/local/share/vault/vault_tmp_user_key.sig")) {
 			printf("Failed to sign user key.\n");
@@ -365,6 +365,54 @@ int _vault_del_line(char* username, char* groupname, char* filename, char* line,
 
 int vault_group_add_file(char* groupname, char* filename) {
 	/* We want to encrypt a file with the key and then upload it. */
+	/* First, we download our key for the group. */
 
-	
+	char* username = vault_file_read("/usr/local/share/vault/vault_user").ptr;
+	username[strlen(username) - 1] = 0;
+
+	/* key_filename = "key/username" */
+
+	char* key_filename = malloc(strlen(username) + 5);
+	key_filename[strlen(username) + 4] = 0;
+	memcpy(key_filename, "key/", 4);
+	memcpy(key_filename + 4, username, strlen(username));
+
+	printf("Crafted key filename : [%s]\n", key_filename);
+
+	if (!_vault_download_safe(username, groupname, key_filename, "/usr/local/share/vault/af_temp_user", 1)) {
+		printf("Failed to download encrypted group key.\n");
+		return 0;
+	}
+
+	printf("Downloaded encrypted key.\n");
+
+	if (!vault_crypt_pki_decrypt("/usr/local/share/vault/af_temp_user", "/usr/local/share/vault/af_temp_user_key")) {
+		printf("Failed to decrypt key.\n");
+		return 0;
+	}
+
+	printf("Decrypted group key.\n");
+	printf("Encrypting file..\n");
+
+	vault_buffer key = vault_file_read("/usr/local/share/vault/af_temp_user_key");
+
+	if (!vault_encrypt_aes_file(filename, "/usr/local/share/vault/af_temp_file", key.ptr, key.size)) {
+		printf("Failed to encrypt file with group key.\n");
+		return 0;
+	}
+
+	printf("Encrypted file.\n");
+
+	if (!_vault_upload_safe(groupname, "/usr/local/share/vault/af_temp_file", filename, 1)) {
+		printf("Failed to upload file.\n");
+		return 0;
+	}
+
+	vault_syscall("rm -f /usr/local/share/vault/af_temp_file /usr/local/share/vault/af_temp_user_key /usr/local/share/af_temp_user");
+
+	free(username);
+	free(key_filename);
+	free(key.ptr);
+
+	return 1;
 }
