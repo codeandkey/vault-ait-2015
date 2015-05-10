@@ -50,12 +50,14 @@ vault_arg_list vault_args_get(int argc, char** argv)
 		}
 
 		if (!strcmp(argv[i], "-l") || !strcmp(argv[i], "--list")) {
-			if (!_vault_args_check_format(argc, argv, i, 0)) {
+			if (!_vault_args_check_format(argc, argv, i, 2)) {
 				output.mode = VAULT_ARG_MODE_INVALID;
 				return output;
 			}
 
 			output.mode = VAULT_ARG_MODE_LIST;
+			output.username = argv[i + 1];
+			output.groupname = argv[i + 2];
 		}
 
 		if (!strcmp(argv[i], "-p") || !strcmp(argv[i], "--password")) {

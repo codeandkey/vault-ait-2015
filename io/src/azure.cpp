@@ -143,11 +143,14 @@ std::vector<std::string> IO_AzureInterface::List(void) {
 		azure::storage::continuation_token token;
 
 		do {
-			azure::storage::blob_result_segment result = blob_container.list_blobs_segmented(token);
-			std::vector<azure::storage::cloud_blob> blobs = result.blobs();
+			azure::storage::list_blob_item_segment result = blob_container.list_blobs_segmented(token);
 
-			for (std::vector<azure::storage::cloud_blob>::const_iterator it = blobs.cbegin(); it != blobs.cend(); ++it) {
-				output.push_back(it->uri().path());
+			for (auto& it : result.results()) {
+				if (it.is_blob()) {
+					output.push_back(it.as_blob().uri().path());
+				} else {
+					output.push_back(it.as_directory().uri().path());
+				}
 			}
 
 			token = result.continuation_token();

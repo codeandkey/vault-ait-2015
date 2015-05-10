@@ -43,6 +43,9 @@ int main(int argc, char** argv)
 	case VAULT_ARG_MODE_GET:
 		output = _test_element(vault_group_get_file(args.username, args.groupname, args.filename, args.outfilename), "file download");
 		break;
+	case VAULT_ARG_MODE_LIST:
+		output = _test_element(vault_group_list(args.username, args.groupname), "file list");
+		break;
 	}
 
 	return output;
