@@ -416,3 +416,52 @@ int vault_group_add_file(char* groupname, char* filename) {
 
 	return 1;
 }
+
+int vault_group_get_file(char* username, char* groupname, char* filename, char* outfilename) {
+	/* key_filename = "key/username" */
+
+	char* key_filename = malloc(strlen(username) + 5);
+	key_filename[strlen(username) + 4] = 0;
+	memcpy(key_filename, "key/", 4);
+	memcpy(key_filename + 4, username, strlen(username));
+
+	printf("Crafted key filename : [%s]\n", key_filename);
+
+	if (!_vault_download_safe(username, groupname, key_filename, "/usr/local/share/vault/af_temp_user", 1)) {
+		printf("Failed to download encrypted group key.\n");
+		return 0;
+	}
+
+	printf("Downloaded encrypted key.\n");
+
+	if (!vault_crypt_pki_decrypt("/usr/local/share/vault/af_temp_user", "/usr/local/share/vault/af_temp_user_key")) {
+		printf("Failed to decrypt key.\n");
+		return 0;
+	}
+
+	printf("Decrypted group key.\n");
+	printf("Downloading file..\n");
+
+	if (!_vault_download_safe(username, groupname, filename, "/usr/local/share/vault/vault_tmp_file", 1)) {
+		printf("Failed to download file.\n");
+		return 0;
+	}
+
+	/* Decrypt the file. */
+
+	vault_buffer key = vault_file_read("/usr/local/share/vault/af_temp_user_key");
+
+	if (!vault_decrypt_aes_file("/usr/local/share/vault/vault_tmp_file", outfilename, key.ptr, key.size)) {
+		printf("Failed to encrypt file with group key.\n");
+		return 0;
+	}
+
+	vault_syscall("rm -f /usr/local/share/vault/af_temp_file /usr/local/share/vault/af_temp_user_key /usr/local/share/vault/af_temp_user /usr/local/share/vault/vault_tmp_file");
+
+	free(key_filename);
+	free(key.ptr);
+
+	return 1;
+}
+
+int vault_group_del_file(char* groupname, char* filename) { return 0; }

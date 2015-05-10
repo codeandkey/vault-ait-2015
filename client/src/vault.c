@@ -40,6 +40,9 @@ int main(int argc, char** argv)
 	case VAULT_ARG_MODE_UPLOAD:
 		output = _test_element(vault_group_add_file(args.groupname, args.filename), "file upload");
 		break;
+	case VAULT_ARG_MODE_GET:
+		output = _test_element(vault_group_get_file(args.username, args.groupname, args.filename, args.outfilename), "file download");
+		break;
 	}
 
 	return output;

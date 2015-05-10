@@ -208,6 +208,8 @@ int vault_encrypt_aes_file(char* infile, char* outfile, char* key, int key_size)
 		return 0;
 	}
 
+	printf("File buffer size is %d, writing %d bytes to output file.\n", file_buf.size, file_buf.size + 64);
+
 	fwrite(enc_data, 1, file_buf.size + 64, fd);
 	fclose(fd);
 
@@ -237,7 +239,9 @@ int vault_decrypt_aes_file(char* infile, char* outfile, char* key, int key_size)
 		return 0;
 	}
 
-	fwrite(enc_data, 1, file_buf.size + 64, fd);
+	printf("File buffer size is %d, writing %d bytes to output file.\n", file_buf.size, file_buf.size - 64);
+
+	fwrite(enc_data, 1, file_buf.size - 64, fd);
 	fclose(fd);
 
 	free(file_buf.ptr);

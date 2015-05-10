@@ -46,7 +46,7 @@ int vault_crypt_pki_decrypt(char* infile, char* outfile)
 {
 	int result = 0;
 
-	result = !vault_syscall("openssl rsautl -in %s -out %s -inkey /usr/local/share/vault/vault_pki_private.pem", infile, outfile);
+	result = !vault_syscall("openssl rsautl -in %s -out %s -inkey /usr/local/share/vault/vault_pki_private.pem -decrypt", infile, outfile);
 
 	return result;
 }

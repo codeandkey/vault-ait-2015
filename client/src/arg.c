@@ -36,6 +36,19 @@ vault_arg_list vault_args_get(int argc, char** argv)
 			output.groupname = argv[i + 2];
 		}
 
+		if (!strcmp(argv[i], "-dl") || !strcmp(argv[i], "--download")) {
+			if (!_vault_args_check_format(argc, argv, i, 4)) {
+				output.mode = VAULT_ARG_MODE_INVALID;
+				return output;
+			}
+
+			output.mode = VAULT_ARG_MODE_GET;
+			output.username = argv[i + 1];
+			output.groupname = argv[i + 2];
+			output.filename = argv[i + 3];
+			output.outfilename = argv[i + 4];
+		}
+
 		if (!strcmp(argv[i], "-l") || !strcmp(argv[i], "--list")) {
 			if (!_vault_args_check_format(argc, argv, i, 0)) {
 				output.mode = VAULT_ARG_MODE_INVALID;

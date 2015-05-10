@@ -32,6 +32,7 @@
 struct _vault_arg_list {
 	int mode;
 	char* filename, *groupname, *username, *password;
+	char* outfilename;
 };
 
 typedef struct _vault_arg_list vault_arg_list;

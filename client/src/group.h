@@ -13,4 +13,6 @@ int vault_group_add_user(char* groupname, char* username); /* This function will
 int vault_group_remove_user(char* groupname, char* username); /* This function will remove a user from an existing group. The user cannot be yourself. */
 
 int vault_group_add_file(char* groupname, char* filename); /* This function will copy a file from the root group to <groupname>. */
-int vault_group_revoke_file(char* groupname, char* filename); /* This function will revoke a file from a group (not entirely secure, the group may have already decrypted the file), and if the group is root the file will be revoked from all groups. */
+int vault_group_get_file(char* username, char* groupname, char* filename, char* outfilename); /* This function will retrieve a file and store it in the target location. */
+
+int vault_group_del_file(char*, char*);
