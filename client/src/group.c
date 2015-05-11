@@ -80,6 +80,8 @@ char* _vault_group_genkey(void)
 		return NULL;
 	}
 
+	printf("Generating random symmetric key. You may want to generate some entropy for the kernel!\n");
+
 	fread(groupkey, 1, 32, dev_rand);
 	fclose(dev_rand);
 
@@ -142,7 +144,7 @@ int _vault_genkeys(char* groupname) {
 			continue;
 		}
 
-		vault_syscall("rm -f /usr/local/share/vault/vault_tmp_public_key /usr/local/share/vault/vault_tmp_user_key /usr/local/share/vault/vault_tmp_user_key.sig");
+		vault_syscall("rm -f /usr/local/share/vault/vault_tmp_public_key /usr/local/share/vault/vault_tmp_user_key /usr/local/share/vault/vault_tmp_user_key.sig /usr/local/share/vault_tmp_user_key_unenc");
 
 		group_list_username = strtok(NULL, "\n");
 	}
