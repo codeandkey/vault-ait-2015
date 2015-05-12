@@ -61,7 +61,23 @@ int vault_group_create(char* groupname)
 
 int vault_group_delete(char* groupname)
 {
-	return 0;
+	/* To simply make the group unusable, we delete the group user list. */
+
+	char* username = vault_file_read("/usr/local/share/vault/vault_user").ptr;
+
+	if (vault_syscall("vaultio delete %s/group_list %s", groupname, username)) {
+		printf("Failed to delete group.\n");
+		return 0;
+	}
+
+	if (vault_syscall("vaultio delete %s/group_list.sig %s", groupname, username)) {
+		printf("Failed to delete group signature.\n");
+		return 0;
+	}
+
+	free(username);
+
+	return 1;
 }
 
 char* _vault_group_genkey(void)

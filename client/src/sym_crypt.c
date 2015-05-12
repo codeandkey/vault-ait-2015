@@ -252,12 +252,12 @@ int vault_decrypt_aes_file(char* infile, char* outfile, char* key, int key_size)
 
 char* _vault_crypt_getctr(void)
 {
-	/* We simply want to generate a good nonce. We can do this by pulling from /dev/urandom (does not need to be cryptographically secure. */
-	/* since the block size is 32 bytes, we pull that much data. */
+	/* We simply want to generate a good nonce. We can do this by pulling from /dev/urandom (does not need to be cryptographically secure). */
+	/* Since the block size is 32 bytes, we pull that much data. */
 
 #if defined(VAULT_PLATFORM_WIN32) || defined(VAULT_PLATFORM_OSX)
 	printf("Nonce generation has not been implemented yet for this platform!\n");
-	return "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+	return NULL;
 #endif
 
 	FILE* dev_rand = fopen("/dev/urandom", "r");

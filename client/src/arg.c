@@ -109,7 +109,7 @@ vault_arg_list vault_args_get(int argc, char** argv)
 			output.groupname = argv[i + 2];
 		}
 
-		if (!strcmp(argv[i], "-a") || !strcmp(argv[i], "--adduser")) {
+		if (!strcmp(argv[i], "-au") || !strcmp(argv[i], "--adduser")) {
 			if (!_vault_args_check_format(argc, argv, i, 2)) {
 				output.mode = VAULT_ARG_MODE_INVALID;
 				return output;

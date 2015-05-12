@@ -21,6 +21,13 @@ int main(int argc, char** argv)
 	case VAULT_ARG_MODE_HELP:
 		printf("Vault client, version %s\n", VAULT_VERSION_STRING);
 		printf("Arguments :\n");
+		printf("-c, --config : Create a new user.\n");
+		printf("-u, --upload <filename> <groupname> : Upload a file to a group.\n");
+		printf("-dl, --download <username> <groupname> <filename> <outfilename> : Download a file from a group.\n");
+		printf("-au, --adduser <username> <groupname> : Adds a user to the group.\n");
+		printf("-du, --deluser <username> <groupname> : Removes a user from the group.\n");
+		printf("-ng, --newgroup <groupname> : Creates a new group.\n");
+		printf("-dg, --delgroup <groupname> : Deletes a group.\n");
 		break;
 	case VAULT_ARG_MODE_CONFIG:
 		output = _test_element(vault_wiz(), "configuration");
