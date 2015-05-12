@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
 		interface = NULL;
 	}
 
-	bool result = false;
+	bool result = true;
 
 	if (mode_upload) {
 		result = interface->Upload(localfile, remotefile);

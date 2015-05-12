@@ -16,3 +16,4 @@ int vault_group_add_file(char* groupname, char* filename); /* This function will
 int vault_group_get_file(char* username, char* groupname, char* filename, char* outfilename); /* This function will retrieve a file and store it in the target location. */
 
 int vault_group_del_file(char*, char*);
+int vault_group_list(char* username, char* groupname);

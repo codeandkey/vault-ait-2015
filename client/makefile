@@ -3,7 +3,7 @@ SOURCES = vault.c syscall.c user.c hash.c wiz.c arg.c file.c sym_crypt.c util.c 
 VPATH = src
 
 LINUX_CC = gcc
-LINUX_CFLAGS = -std=gnu11 -Wall -fdiagnostics-color=auto -DVAULT_BUILD_DEBUG -g
+LINUX_CFLAGS = -std=gnu11 -Wall -fdiagnostics-color=auto
 LINUX_LDFLAGS = -lcrypto -lgcrypt -lssl
 
 LINUX_OUTPUT = vault

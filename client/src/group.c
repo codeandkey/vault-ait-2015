@@ -96,6 +96,8 @@ char* _vault_group_genkey(void)
 		return NULL;
 	}
 
+	printf("Generating random symmetric key. You may want to generate some entropy for the kernel!\n");
+
 	fread(groupkey, 1, 32, dev_rand);
 	fclose(dev_rand);
 
@@ -158,7 +160,7 @@ int _vault_genkeys(char* groupname) {
 			continue;
 		}
 
-		vault_syscall("rm -f /usr/local/share/vault/vault_tmp_public_key /usr/local/share/vault/vault_tmp_user_key /usr/local/share/vault/vault_tmp_user_key.sig");
+		vault_syscall("rm -f /usr/local/share/vault/vault_tmp_public_key /usr/local/share/vault/vault_tmp_user_key /usr/local/share/vault/vault_tmp_user_key.sig /usr/local/share/vault_tmp_user_key_unenc");
 
 		group_list_username = strtok(NULL, "\n");
 	}
@@ -436,10 +438,13 @@ int vault_group_add_file(char* groupname, char* filename) {
 int vault_group_get_file(char* username, char* groupname, char* filename, char* outfilename) {
 	/* key_filename = "key/username" */
 
-	char* key_filename = malloc(strlen(username) + 5);
-	key_filename[strlen(username) + 4] = 0;
+	char* owner = vault_file_read("/usr/local/share/vault/vault_user").ptr;
+	owner[strlen(owner) - 1] = 0;
+
+	char* key_filename = malloc(strlen(owner) + 5);
+	key_filename[strlen(owner) + 4] = 0;
 	memcpy(key_filename, "key/", 4);
-	memcpy(key_filename + 4, username, strlen(username));
+	memcpy(key_filename + 4, owner, strlen(owner));
 
 	printf("Crafted key filename : [%s]\n", key_filename);
 
@@ -476,8 +481,18 @@ int vault_group_get_file(char* username, char* groupname, char* filename, char* 
 
 	free(key_filename);
 	free(key.ptr);
+	free(owner);
 
 	return 1;
 }
 
 int vault_group_del_file(char* groupname, char* filename) { return 0; }
+
+int vault_group_list(char* username, char* groupname) {
+	if (vault_syscall("vaultio list %s", username)) {
+		printf("Failed to list remote files.\n");
+		return 0;
+	}
+
+	return 1;
+}
