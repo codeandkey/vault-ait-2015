@@ -21,3 +21,8 @@ std::vector<std::string> IO_Interface::List(void) {
 	std::cout << "[IO_Interface::List] Calling the parent class, will not do anything!\n";
 	return std::vector<std::string>();
 }
+
+bool IO_Interface::Delete(std::string remotefile) {
+	std::cout << "[IO_Interace::Delete] Calling the parent class, will not do anything!\n";
+	return false;
+}

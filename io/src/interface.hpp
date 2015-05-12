@@ -13,6 +13,7 @@ namespace Vault {
 		virtual bool Upload(std::string localfile, std::string remotefile);
 		virtual bool Download(std::string localfile, std::string remotefile);
 		virtual std::vector<std::string> List(void);
+		virtual bool Delete(std::string remotefile);
 	protected:
 		std::map<std::string, std::string> key_map;
 	};

@@ -17,5 +17,6 @@ namespace Vault {
 		bool Upload(std::string localfile, std::string remotefile);
 		bool Download(std::string localfile, std::string remotefile);
 		std::vector<std::string> List(void);
+		bool Delete(std::string remotefile);
 	};
 }
